@@ -40,6 +40,7 @@ static Window *window;
 
 static char* font_light;
 static char* font_bold;
+static int row_height;
 
 typedef struct {
 	TextLayer *currentLayer;
@@ -180,7 +181,6 @@ static void configureLightLayer(TextLayer *textlayer)
 static int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 {
 	int numLines = 0;
-	int rowHeight = 0;
 
 	// Set bold layer.
 	int i;
@@ -203,24 +203,14 @@ static int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format
 	numLines = i;
 
 
-	switch (lang) {
-		case FI:
-			rowHeight = 27;
-			break;
-		default:
-			rowHeight = ROW_HEIGHT;
-			break;
-		
-	}
-
 	// Calculate y position of top Line
-	int ypos = (168 - numLines * rowHeight) / 2 - TOP_MARGIN;
+	int ypos = (168 - numLines * row_height) / 2 - TOP_MARGIN;
 
 	// Set y positions for the lines
 	for (int i = 0; i < numLines; i++)
 	{
 		layer_set_frame((Layer *)lines[i].nextLayer, GRect(144, ypos, 144, 50));
-		ypos += rowHeight;
+		ypos += row_height;
 	}
 
 	return numLines;
@@ -513,10 +503,12 @@ static void setup_font(Language lang) {
     case FI:
       font_light = FONT_KEY_GOTHIC_28;
       font_bold = FONT_KEY_GOTHIC_28_BOLD;
+      row_height = 27;
       break;
     default:
       font_light = FONT_KEY_BITHAM_42_LIGHT;
       font_bold = FONT_KEY_BITHAM_42_BOLD;
+      row_height = ROW_HEIGHT;
       break;
   }
 }
