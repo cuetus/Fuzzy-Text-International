@@ -5,7 +5,7 @@
 #define DEBUG 0
 
 #define NUM_LINES 4
-#define LINE_LENGTH 7
+#define LINE_LENGTH 12
 #define BUFFER_SIZE (LINE_LENGTH + 2)
 #define ROW_HEIGHT 37
 #define TOP_MARGIN 10
@@ -25,7 +25,7 @@
 // Delay from the start of the current layer going out until the next layer slides in
 #define ANIMATION_OUT_IN_DELAY 100
 
-#define LINE_APPEND_MARGIN 0
+#define LINE_APPEND_MARGIN 5
 // We can add a new word to a line if there are at least this many characters free after
 #define LINE_APPEND_LIMIT (LINE_LENGTH - LINE_APPEND_MARGIN)
 
@@ -37,6 +37,9 @@ static bool invert = false;
 static Language lang = EN_US;
 
 static Window *window;
+
+static char* font_light;
+static char* font_bold;
 
 typedef struct {
 	TextLayer *currentLayer;
@@ -158,7 +161,7 @@ static GTextAlignment lookup_text_alignment(int align_key)
 // Configure bold line of text
 static void configureBoldLayer(TextLayer *textlayer)
 {
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+	text_layer_set_font(textlayer, fonts_get_system_font(font_bold));
 	text_layer_set_text_color(textlayer, GColorWhite);
 	text_layer_set_background_color(textlayer, GColorClear);
 	text_layer_set_text_alignment(textlayer, lookup_text_alignment(text_align));
@@ -167,7 +170,7 @@ static void configureBoldLayer(TextLayer *textlayer)
 // Configure light line of text
 static void configureLightLayer(TextLayer *textlayer)
 {
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT));
+	text_layer_set_font(textlayer, fonts_get_system_font(font_light));
 	text_layer_set_text_color(textlayer, GColorWhite);
 	text_layer_set_background_color(textlayer, GColorClear);
 	text_layer_set_text_alignment(textlayer, lookup_text_alignment(text_align));
@@ -177,6 +180,7 @@ static void configureLightLayer(TextLayer *textlayer)
 static int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 {
 	int numLines = 0;
+	int rowHeight = 0;
 
 	// Set bold layer.
 	int i;
@@ -198,14 +202,25 @@ static int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format
 	}
 	numLines = i;
 
+
+	switch (lang) {
+		case FI:
+			rowHeight = 27;
+			break;
+		default:
+			rowHeight = ROW_HEIGHT;
+			break;
+		
+	}
+
 	// Calculate y position of top Line
-	int ypos = (168 - numLines * ROW_HEIGHT) / 2 - TOP_MARGIN;
+	int ypos = (168 - numLines * rowHeight) / 2 - TOP_MARGIN;
 
 	// Set y positions for the lines
 	for (int i = 0; i < numLines; i++)
 	{
 		layer_set_frame((Layer *)lines[i].nextLayer, GRect(144, ypos, 144, 50));
-		ypos += ROW_HEIGHT;
+		ypos += rowHeight;
 	}
 
 	return numLines;
@@ -493,6 +508,19 @@ static void window_unload(Window *window)
 	}
 }
 
+static void setup_font(Language lang) {
+  switch (lang) {
+    case FI:
+      font_light = FONT_KEY_GOTHIC_28;
+      font_bold = FONT_KEY_GOTHIC_28_BOLD;
+      break;
+    default:
+      font_light = FONT_KEY_BITHAM_42_LIGHT;
+      font_bold = FONT_KEY_BITHAM_42_BOLD;
+      break;
+  }
+}
+
 static void handle_init() {
 	// Load settings from persistent storage
 	if (persist_exists(TEXT_ALIGN_KEY))
@@ -510,6 +538,8 @@ static void handle_init() {
 		lang = (Language) persist_read_int(LANGUAGE_KEY);
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Read language from store: %u", lang);
 	}
+
+	setup_font(lang);
 
 	window = window_create();
 	window_set_background_color(window, GColorBlack);
